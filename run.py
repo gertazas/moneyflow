@@ -2,6 +2,8 @@ import os
 import gspread
 import random
 import time
+import math
+import random
 from google.oauth2.service_account import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
@@ -26,7 +28,7 @@ def random_number():
 
 def main():
     print("Welcome to Gary Murphy's MoneyFlow Automation")
-    print("All data entries here:\n")
+    print("All data entries:\n")
 
     # Load credentials from credentials.json
     creds = Credentials.from_service_account_file('credentials.json', scopes=SCOPE)
@@ -85,7 +87,6 @@ def main():
                     total_sum_col10 += cell_value_col10
                 except ValueError:
                     pass
-            print(f'Getting more info...')
             time.sleep(4.1)
             # Column 11
             cell_value_col11 = worksheet.cell(row_num, 11).value
@@ -106,7 +107,6 @@ def main():
                     total_sum_col12 += cell_value_col12
                 except ValueError:
                     pass
-            print(f'Getting more info...')
             time.sleep(4.1)
             # Column 13
             cell_value_col13 = worksheet.cell(row_num, 13).value
@@ -117,7 +117,7 @@ def main():
                     total_sum_col13 += cell_value_col13
                 except ValueError:
                     pass
-        print(f'Getting more info...')
+        print(f'Loading info column 18...')
         time.sleep(60.1)
         for row_num_18  in range(3, 23):
             # Column 18
@@ -176,13 +176,16 @@ def main():
         # Retrieve the values from the specified rows in column B
         for week_number in week_numbers:
             week_cell_value = worksheet.cell(17, week_number).value
+            week_cell_value = week_cell_value.replace('€', '').replace(',', '')
+            week_cell_value = float(week_cell_value)
+            week_cell_value = round(week_cell_value)
             week_cell_values.append(week_cell_value)
 
 
         # Initialize a variable to store the sum
         week_statements_sum = 0
-        print(f'All good, loading more info...')
-        time.sleep(60.0)
+        print(f'Still loading more info...')
+        time.sleep(61.0)
          # Get the amount from row 14, column R
         amount_row_14_col_R = worksheet.cell(23, 18).value
 
@@ -217,13 +220,28 @@ def main():
                 week_cell_value = week_cell_value.replace('€', '').replace(',', '')
                 week_statements_sum += float(week_cell_value)
                 
-                
        
         wages = worksheet.cell(18, 17).value.replace('€', '').replace(',', '')
         receipts = worksheet.cell(19, 17).value.replace('€', '').replace(',', '')
         total = float(wages) + float(receipts) + week_statements_sum
-        worksheet.update_cell(34, 2, total)
-        worksheet.update_cell(20, 17, total) 
+        # total and roand total diff // roundtotal- total= moneydown
+        roundtotal = math.ceil(total)
+        moneydiff = roundtotal - total
+        moneydown = 0
+        randomdown = random.randrange(5, 15)
+        randomdown = float(randomdown)
+        moneydown = moneydiff + randomdown
+        moneydown = float(moneydown)
+        cashtotal = 0
+        # cashtotal = monday + tuesday + wednesday + thursday + friday + saturday + sunday
+        cashtotal = total + moneydown
+        cashtotal = float(cashtotal)
+        cashmoney = cashtotal + moneydown
+        cashdown = cashtotal - total
+        worksheet.update_cell(34, 2, cashtotal)
+        worksheet.update_cell(35, 2, total)
+        worksheet.update_cell(36, 2, cashdown)
+        worksheet.update_cell(20, 17, roundtotal) 
         worksheet.update_cell(17, 17, week_statements_sum)     
         row_counts = [5, 9, 13, 18, 23, 28, 33]
 
@@ -231,7 +249,7 @@ def main():
             worksheet.update_cell(row_count, 2, value)
             print('Week_cell_value', value)
         print("Initial bank statements in total: €", week_statements_sum)
-        print('Total:', total)
+        print('Total:', roundtotal)
 
         week_total_sum = total_sum_receipts + total_sum_wages + week_statements_sum
         worksheet.update_cell(20, 17, week_total_sum)
@@ -242,7 +260,8 @@ def main():
 
         # Initialize an empty list to store the values
         cell_values = []
-
+        print(f'All good, loading more info all weeks for trailers...')
+        time.sleep(min_sleep_duration)
         # Retrieve the values from the specified rows in column B
         for row_number in row_numbers:
             cell_value = worksheet.cell(row_number, 2).value
@@ -276,6 +295,7 @@ def main():
         # Add 5% of expenses_cash
         monday_plus = float(expenses_cash * 0.05)
         monday = monday_bank + monday_plus
+        monday = round(monday)
         #################################################################################################
         print('Monday: €', monday)
         worksheet.update_cell(5, 2, monday)
@@ -287,6 +307,7 @@ def main():
         # Add 5% of expenses_cash
         tuesday_plus = float(expenses_cash * 0.05)
         tuesday = tuesday_bank + tuesday_plus
+        tuesday = round(tuesday)
         print('Tuesday: €', tuesday)
         worksheet.update_cell(9, 2, tuesday)
 
@@ -297,6 +318,7 @@ def main():
         # Add 5% of expenses_cash
         wednesday_plus = float(expenses_cash * 0.07)
         wednesday = wednesday_bank + wednesday_plus
+        wednesday = round(wednesday)
         print('Wednesday: €', wednesday)
         worksheet.update_cell(13, 2, wednesday)
 
@@ -307,6 +329,7 @@ def main():
         # Add 13% of expenses_cash
         thursday_plus = float(expenses_cash * 0.13)
         thursday = thursday_bank + thursday_plus
+        thursday = round(thursday)
         print('Thursday: €', thursday)
         worksheet.update_cell(18, 2, thursday)
 
@@ -317,6 +340,7 @@ def main():
         # Add 22% of expenses_cash
         friday_plus = float(expenses_cash * 0.22)
         friday = friday_bank + friday_plus
+        friday = round(friday)
         print('Friday: €', thursday)
         worksheet.update_cell(23, 2, friday)
 
@@ -327,81 +351,109 @@ def main():
         # Add 18% of expenses_cash
         sunday_plus = float(expenses_cash * 0.18)
         sunday = sunday_bank + sunday_plus
+        sunday = round(sunday)
         print('Sunday: €', sunday)
         worksheet.update_cell(33, 2, sunday)
 
         # Saturday total
         saturday = float(all_weeks_total) - monday - tuesday - wednesday - thursday - friday - sunday
+        saturday = round(saturday)
         print('Saturday: €', saturday)
         worksheet.update_cell(28, 2, saturday)
         
     # Weekdays and Trailers 1, 2, and 3 only:
         def calculate_and_update_trailer(day, trailer_num, row, day_name):
-            value = float(day * 0.65) if trailer_num == 1 else float(day * 0.21) if trailer_num == 2 else float(day * 0.14)
+            value = float(day * 0.65) if trailer_num == 1 else float(day * 0.21) # if trailer_num == 2 else float(day * 0.14)
+            value = round(value)
             worksheet.update_cell(row, 3, value)
             print(f'{day_name}trailer{trailer_num}: €', value)
             return value
 
         mondaytrailers = []
         # Monday
-        for i in range(1, 4):
+        for i in range(1, 3): # for i in range(1, 4):
             mondaytrailer = calculate_and_update_trailer(monday, i, i+1, 'monday   ')
             mondaytrailers.append(mondaytrailer)
+        mondaytrailer3 = monday - mondaytrailers[0] - mondaytrailers[1]
+        mondaytrailers.append(mondaytrailer3)
+        worksheet.update_cell(4, 3, mondaytrailer3)
         print('mondaytrailers', mondaytrailers)
         print('_________________________________________________________________________')
         tuesdaytrailers = []
         # Tuesday
-        for i in range(1, 4):
+        for i in range(1, 3):
             tuesdaytrailer = calculate_and_update_trailer(tuesday, i, i+5, 'tuesday  ')
             tuesdaytrailers.append(tuesdaytrailer)
-            print('tuesdaytrailers', tuesdaytrailers)
+        tuesdaytrailer3 = tuesday - tuesdaytrailers[0] - tuesdaytrailers[1]
+        tuesdaytrailers.append(tuesdaytrailer3)
+        worksheet.update_cell(8, 3, tuesdaytrailer3)
+        print('tuesdaytrailers', tuesdaytrailers)
         print('_________________________________________________________________________')
         print(f'Getting more info...')
         time.sleep(60.1)
         # Wednesday
         wednesdaytrailers = []
-        for i in range(1, 4):
+        for i in range(1, 3):
             wednesdaytrailer = calculate_and_update_trailer(wednesday, i, i+9, 'wednesday')
             wednesdaytrailers.append(wednesdaytrailer)
-            print('wednesdaytrailers', wednesdaytrailers)
+        wednesdaytrailer3 = wednesday - wednesdaytrailers[0] - wednesdaytrailers[1]
+        wednesdaytrailers.append(wednesdaytrailer3)
+        worksheet.update_cell(12, 3, wednesdaytrailer3)
+        print('wednesdaytrailers', wednesdaytrailers)
         print('_________________________________________________________________________')
 
 
     # Weekends and Trailers 1, 2, 3 and 4:
         def calculate_and_update_trailer4(day, trailer_num, row, day_name):
-            value = float(day * 0.54) if trailer_num == 1 else float(day * 0.18) if trailer_num == 2 else float(day * 0.16) if trailer_num == 3 else float(day * 0.12)
+            value = float(day * 0.54) if trailer_num == 1 else float(day * 0.18) if trailer_num == 2 else float(day * 0.16) # if trailer_num == 3 else float(day * 0.12)
+            value = round(value)
             worksheet.update_cell(row, 3, value)
             print(f'{day_name}trailer{trailer_num}: €', value)
             return value
 
         # Thursday
         thursdaytrailers = []
-        for i in range(1, 5):
+        for i in range(1, 4):
             thursdaytrailer = calculate_and_update_trailer4(thursday, i, i+13, 'thursday ')
             thursdaytrailers.append(thursdaytrailer)
-            print('thursdaytrailers', thursdaytrailers)
+        thursdaytrailer3 = thursday - thursdaytrailers[0] - thursdaytrailers[1] - thursdaytrailers[2]
+        thursdaytrailers.append(thursdaytrailer3)
+        worksheet.update_cell(17, 3, thursdaytrailer3)
+        print('thursdaytrailers', thursdaytrailers)
         print('_________________________________________________________________________')
         # Friday
         fridaytrailers = []
-        for i in range(1, 5):
+        for i in range(1, 4):
             fridaytrailer = calculate_and_update_trailer4(friday, i, i+18, 'friday   ')
             fridaytrailers.append(fridaytrailer)
-            print('fridaytrailers', fridaytrailers)
+        fridaytrailer3 = friday - fridaytrailers[0] - fridaytrailers[1] - fridaytrailers[2]
+        fridaytrailers.append(fridaytrailer3)
+        worksheet.update_cell(22, 3, fridaytrailer3)
+        print('fridaytrailers', fridaytrailers)
         print('_________________________________________________________________________')
         # Saturday
         saturdaytrailers = []
-        for i in range(1, 5):
+        for i in range(1, 4):
             saturdaytrailer = calculate_and_update_trailer4(saturday, i, i+23, 'saturday ')
             saturdaytrailers.append(saturdaytrailer)
+        saturdaytrailer3 = saturday - saturdaytrailers[0] - saturdaytrailers[1] - saturdaytrailers[2]
+        saturdaytrailers.append(saturdaytrailer3)
+        worksheet.update_cell(27, 3, saturdaytrailer3)
+        print('saturdaytrailers', saturdaytrailers)
         print('_________________________________________________________________________')
         # Sunday
         sundaytrailers = []
-        for i in range(1, 5):
+        for i in range(1, 4):
             sundaytrailer = calculate_and_update_trailer4(sunday, i, i+28, 'sunday   ')
             sundaytrailers.append(sundaytrailer)
+        sundaytrailer3 = sunday - sundaytrailers[0] - sundaytrailers[1] - sundaytrailers[2]
+        sundaytrailers.append(sundaytrailer3)
+        worksheet.update_cell(32, 3, sundaytrailer3)
+        print('sundaytrailers', sundaytrailers)
         print('_________________________________________________________________________')
         print('_____________________________')
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# coffe mlsh 23%
         monday_trailer1 = float(mondaytrailers[0])
         print('Monday trailer1 total: €', monday_trailer1)
         print(f'Getting more info...')
@@ -414,7 +466,8 @@ def main():
             else:
                 random_number = random.uniform(50, 100)
             
-            coffee = float(coffee1 * 0.45) + random_number
+            coffee = float(coffee1 * 0.52) + random_number
+            coffee = round(coffee)
             worksheet.update_cell(2, 4, coffee)
             print(f'Trailer1_Coffee_section: €', coffee)
             return coffee
@@ -422,7 +475,8 @@ def main():
         coffee = calculate_and_update_coffee(monday_trailer1)
 
         def calculate_and_update_mlksh(mlsh1):
-            mlksh = float(mlsh1 * 0.25) 
+            mlksh = float(mlsh1 * 0.15)
+            mlksh = round(mlksh)
             worksheet.update_cell(2, 5, mlksh)
             print(f'Trailer1_Milkshake_section: €', mlksh)
             return mlksh
@@ -437,18 +491,21 @@ def main():
 
         calculate_and_update_23percent(coffee, mlksh)
         print('___________________')
+
+# -----------------!!!!!!!! For 2 trailers during Winter:  WINTER WINTER WINTER !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         monday_trailer2 = float(mondaytrailers[1])
-        print('Monday trailer1 total: €', monday_trailer2)
+        print('Monday trailer2 total: €', monday_trailer2)
 
         def calculate_and_update_mlksh2(mlsh2):
-            if mlsh2 < 200:
-                random_number = 0
-            elif mlsh2 < 400:
-                random_number = random.uniform(0, 50)
+            if mlsh2 < 50:
+                random_number = 3
+            elif mlsh2 < 100:
+                random_number = random.uniform(0, 10)
             else:
-                random_number = random.uniform(0, 75)
+                random_number = random.uniform(0, 35)
 
-            mlksh2 = float(mlsh2 * 0.45) + random_number
+            mlksh2 = float(mlsh2 * 0.20) + random_number
+            mlksh2 = round(mlksh2)
             worksheet.update_cell(3, 5, mlksh2)
             print(f'Trailer2_Milkshake_section: €', mlksh2)
             return mlksh2
@@ -457,39 +514,75 @@ def main():
 
         def calculate_and_update_23percent2(mlk):
             trailer2_last_section = monday_trailer2 - mlk
+            trailer2_last_section = round(trailer2_last_section)
             worksheet.update_cell(3, 6, trailer2_last_section)
             print(f'Trailer2_23%_section: €', trailer2_last_section)
             return trailer2_last_section
 
         calculate_and_update_23percent2(mlksh2)
-        print('___________________')
-        monday_trailer3 = float(mondaytrailers[2])
-        print('Monday trailer3 total: €', monday_trailer3)
-
-        def calculate_and_update_mlksh2(mlsh3):
-            if mlsh3 < 200:
-                random_number = 0
-            elif mlsh3 < 400:
-                random_number = random.uniform(0, 50)
-            else:
-                random_number = random.uniform(0, 75)
-
-            mlksh3 = float(mlsh3 * 0.45) + random_number
-            worksheet.update_cell(4, 5, mlksh3)
-            print(f'Trailer2_Milkshake_section: €', mlksh3)
-            return mlksh3
-
-        mlksh3 = calculate_and_update_mlksh2(monday_trailer3)
-
-        def calculate_and_update_23percent3(mlk):
-            trailer3_last_section = monday_trailer3 - mlk
-            worksheet.update_cell(4, 6, trailer3_last_section)
-            print(f'Trailer3_23%_section: €', trailer3_last_section)
-            return trailer3_last_section
-
-        calculate_and_update_23percent3(mlksh3)
 
         print('_____________________________')
+
+
+# -----------------!!!!!!!! For 3 trailers during summer: SUMMER SUMMER SUMMER !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # monday_trailer2 = float(mondaytrailers[1])
+        # print('Monday trailer1 total: €', monday_trailer2)
+
+        # def calculate_and_update_mlksh2(mlsh2):
+        #     if mlsh2 < 200:
+        #         random_number = 0
+        #     elif mlsh2 < 400:
+        #         random_number = random.uniform(0, 50)
+        #     else:
+        #         random_number = random.uniform(0, 75)
+
+        #     mlksh2 = float(mlsh2 * 0.22) + random_number
+        #     mlksh2 = round(mlksh2)
+        #     worksheet.update_cell(3, 5, mlksh2)
+        #     print(f'Trailer2_Milkshake_section: €', mlksh2)
+        #     return mlksh2
+
+        # mlksh2 = calculate_and_update_mlksh2(monday_trailer2)
+
+        # def calculate_and_update_23percent2(mlk):
+        #     trailer2_last_section = monday_trailer2 - mlk
+        #     trailer2_last_section = round(trailer2_last_section)
+        #     worksheet.update_cell(3, 6, trailer2_last_section)
+        #     print(f'Trailer2_23%_section: €', trailer2_last_section)
+        #     return trailer2_last_section
+
+        # calculate_and_update_23percent2(mlksh2)
+        # print('___________________')
+
+        # monday_trailer3 = float(mondaytrailers[2])
+        # print('Monday trailer3 total: €', monday_trailer3)
+
+        # def calculate_and_update_mlksh2(mlsh3):
+        #     if mlsh3 < 200:
+        #         random_number = 0
+        #     elif mlsh3 < 400:
+        #         random_number = random.uniform(0, 50)
+        #     else:
+        #         random_number = random.uniform(0, 75)
+
+        #     mlksh3 = float(mlsh3 * 0.22) + random_number
+        #     mlksh3 = round(mlksh3)
+        #     worksheet.update_cell(4, 5, mlksh3)
+        #     print(f'Trailer2_Milkshake_section: €', mlksh3)
+        #     return mlksh3
+
+        # mlksh3 = calculate_and_update_mlksh2(monday_trailer3)
+
+        # def calculate_and_update_23percent3(mlk):
+        #     trailer3_last_section = monday_trailer3 - mlk
+        #     trailer3_last_section = round(trailer3_last_section)
+        #     worksheet.update_cell(4, 6, trailer3_last_section)
+        #     print(f'Trailer3_23%_section: €', trailer3_last_section)
+        #     return trailer3_last_section
+
+        # calculate_and_update_23percent3(mlksh3)
+
+        # print('_____________________________')
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -504,7 +597,8 @@ def main():
             else:
                 random_number = random.uniform(50, 100)
             
-            coffee = float(coffee * 0.45) + random_number
+            coffee = float(coffee * 0.52) + random_number
+            coffee = round(coffee)
             worksheet.update_cell(6, 4, coffee)
             print(f'Trailer1_Coffee_section: €', coffee)
             return coffee
@@ -512,7 +606,8 @@ def main():
         tuesday_coffee = tuesday_calculate_and_update_coffee(tuesday_trailer1)
 
         def tuesday_calculate_and_update_mlksh(mlsh1):
-            mlksh = float(mlsh1 * 0.25) 
+            mlksh = float(mlsh1 * 0.11)
+            mlksh = round(mlksh)
             worksheet.update_cell(6, 5, mlksh)
             print(f'Trailer1_Milkshake_section: €', mlksh)
             return mlksh
@@ -527,19 +622,22 @@ def main():
 
         tuesday_calculate_and_update_23percent(tuesday_coffee, tuesday_mlksh)
         print('___________________')
+
+# -----------------!!!!!!!! For 2 trailers during Winter:  WINTER WINTER WINTER !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         tuesday_trailer2 = float(tuesdaytrailers[1])
-        print('Tuesday trailer1 total: €', tuesday_trailer2)
+        print('Tuesday trailer2 total: €', tuesday_trailer2)
 
         def tuesday_calculate_and_update_mlksh2(mlsh2):
-            if mlsh2 < 200:
-                random_number = 0
-            elif mlsh2 < 400:
-                random_number = random.uniform(0, 50)
+            if mlsh2 < 50:
+                random_number = 3
+            elif mlsh2 < 100:
+                random_number = random.uniform(0, 25)
             else:
-                random_number = random.uniform(0, 75)
+                random_number = random.uniform(0, 35)
 
-            mlksh2 = float(mlsh2 * 0.45) + random_number
-            worksheet.update_cell(7, 5, mlksh2)
+            mlksh2 = float(mlsh2 * 0.20) + random_number
+            mlksh2 = round(mlksh2)
+            worksheet.update_cell(7, 5, mlksh3)
             print(f'Trailer2_Milkshake_section: €', mlksh2)
             return mlksh2
 
@@ -547,39 +645,74 @@ def main():
 
         def tuesday_calculate_and_update_23percent2(mlk):
             trailer2_last_section = tuesday_trailer2 - mlk
+            trailer2_last_section = round(trailer2_last_section)
             worksheet.update_cell(7, 6, trailer2_last_section)
             print(f'Trailer2_23%_section: €', trailer2_last_section)
             return trailer2_last_section
 
         tuesday_calculate_and_update_23percent2(tuesday_mlksh2)
-        print('___________________')
-        tuesday_trailer3 = float(tuesdaytrailers[2])
-        print('Tuesday trailer3 total: €', tuesday_trailer3)
-
-        def tuesday_calculate_and_update_mlksh2(mlsh3):
-            if mlsh3 < 200:
-                random_number = 0
-            elif mlsh3 < 400:
-                random_number = random.uniform(0, 50)
-            else:
-                random_number = random.uniform(0, 75)
-
-            mlksh3 = float(mlsh3 * 0.45) + random_number
-            worksheet.update_cell(8, 5, mlksh3)
-            print(f'Trailer2_Milkshake_section: €', mlksh3)
-            return mlksh3
-
-        tuesday_mlksh3 = tuesday_calculate_and_update_mlksh2(tuesday_trailer3)
-
-        def tuesday_calculate_and_update_23percent3(mlk):
-            trailer3_last_section = tuesday_trailer3 - mlk
-            worksheet.update_cell(8, 6, trailer3_last_section)
-            print(f'Trailer3_23%_section: €', trailer3_last_section)
-            return trailer3_last_section
-
-        tuesday_calculate_and_update_23percent3(tuesday_mlksh3)
 
         print('_____________________________')
+
+# -----------------!!!!!!!! For 3 trailers during summer: SUMMER SUMMER SUMMER !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # tuesday_trailer2 = float(tuesdaytrailers[1])
+        # print('Tuesday trailer1 total: €', tuesday_trailer2)
+
+        # def tuesday_calculate_and_update_mlksh2(mlsh2):
+        #     if mlsh2 < 200:
+        #         random_number = 0
+        #     elif mlsh2 < 400:
+        #         random_number = random.uniform(0, 50)
+        #     else:
+        #         random_number = random.uniform(0, 75)
+
+        #     mlksh2 = float(mlsh2 * 0.21) + random_number
+        #     mlksh2 = round(mlksh2)
+        #     worksheet.update_cell(7, 5, mlksh2)
+        #     print(f'Trailer2_Milkshake_section: €', mlksh2)
+        #     return mlksh2
+
+        # tuesday_mlksh2 = tuesday_calculate_and_update_mlksh2(tuesday_trailer2)
+
+        # def tuesday_calculate_and_update_23percent2(mlk):
+        #     trailer2_last_section = tuesday_trailer2 - mlk
+        #     trailer2_last_section = round(trailer2_last_section)
+        #     worksheet.update_cell(7, 6, trailer2_last_section)
+        #     print(f'Trailer2_23%_section: €', trailer2_last_section)
+        #     return trailer2_last_section
+
+        # tuesday_calculate_and_update_23percent2(tuesday_mlksh2)
+        # print('___________________')
+
+        # tuesday_trailer3 = float(tuesdaytrailers[2])
+        # print('Tuesday trailer3 total: €', tuesday_trailer3)
+
+        # def tuesday_calculate_and_update_mlksh2(mlsh3):
+        #     if mlsh3 < 200:
+        #         random_number = 0
+        #     elif mlsh3 < 400:
+        #         random_number = random.uniform(0, 50)
+        #     else:
+        #         random_number = random.uniform(0, 75)
+
+        #     mlksh3 = float(mlsh3 * 0.21) + random_number
+        #     mlksh3 = round(mlksh3)
+        #     worksheet.update_cell(8, 5, mlksh3)
+        #     print(f'Trailer2_Milkshake_section: €', mlksh3)
+        #     return mlksh3
+
+        # tuesday_mlksh3 = tuesday_calculate_and_update_mlksh2(tuesday_trailer3)
+
+        # def tuesday_calculate_and_update_23percent3(mlk):
+        #     trailer3_last_section = tuesday_trailer3 - mlk
+        #     trailer3_last_section = round(trailer3_last_section)
+        #     worksheet.update_cell(8, 6, trailer3_last_section)
+        #     print(f'Trailer3_23%_section: €', trailer3_last_section)
+        #     return trailer3_last_section
+
+        # tuesday_calculate_and_update_23percent3(tuesday_mlksh3)
+
+        # print('_____________________________')
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         wednesday_trailer1 = float(wednesdaytrailers[0])
@@ -593,7 +726,8 @@ def main():
             else:
                 random_number = random.uniform(50, 100)
             
-            coffee = float(coffee * 0.45) + random_number
+            coffee = float(coffee * 0.49) + random_number
+            coffee = round(coffee)
             worksheet.update_cell(10, 4, coffee)
             print(f'Trailer1_Coffee_section: €', coffee)
             return coffee
@@ -601,7 +735,8 @@ def main():
         wednesday_coffee = wednesday_calculate_and_update_coffee(wednesday_trailer1)
 
         def wednesday_calculate_and_update_mlksh(mlsh1):
-            mlksh = float(mlsh1 * 0.25) 
+            mlksh = float(mlsh1 * 0.12)
+            mlksh = round(mlksh)
             worksheet.update_cell(10, 5, mlksh)
             print(f'Trailer1_Milkshake_section: €', mlksh)
             return mlksh
@@ -627,7 +762,8 @@ def main():
             else:
                 random_number = random.uniform(0, 75)
 
-            mlksh2 = float(mlsh2 * 0.45) + random_number
+            mlksh2 = float(mlsh2 * 0.21) + random_number
+            mlksh2 = round(mlksh2)
             worksheet.update_cell(11, 5, mlksh2)
             print(f'Trailer2_Milkshake_section: €', mlksh2)
             return mlksh2
@@ -636,6 +772,7 @@ def main():
 
         def wednesday_calculate_and_update_23percent2(mlk):
             trailer2_last_section = wednesday_trailer2 - mlk
+            trailer2_last_section = round(trailer2_last_section)
             worksheet.update_cell(11, 6, trailer2_last_section)
             print(f'Trailer2_23%_section: €', trailer2_last_section)
             return trailer2_last_section
@@ -653,7 +790,8 @@ def main():
             else:
                 random_number = random.uniform(0, 75)
 
-            mlksh3 = float(mlsh3 * 0.45) + random_number
+            mlksh3 = float(mlsh3 * 0.21) + random_number
+            mlksh3 = round(mlksh3)
             worksheet.update_cell(12, 5, mlksh3)
             print(f'Trailer2_Milkshake_section: €', mlksh3)
             return mlksh3
@@ -662,6 +800,7 @@ def main():
 
         def wednesday_calculate_and_update_23percent3(mlk):
             trailer3_last_section = wednesday_trailer3 - mlk
+            trailer3_last_section = round(trailer3_last_section)
             worksheet.update_cell(12, 6, trailer3_last_section)
             print(f'Trailer3_23%_section: €', trailer3_last_section)
             return trailer3_last_section
@@ -681,7 +820,8 @@ def main():
             else:
                 random_number = random.uniform(50, 100)
             
-            coffee = float(coffee * 0.45) + random_number
+            coffee = float(coffee * 0.52) + random_number
+            coffee = round(coffee)
             worksheet.update_cell(14, 4, coffee)
             print(f'Trailer1_Coffee_section: €', coffee)
             return coffee
@@ -689,7 +829,8 @@ def main():
         thursday_coffee = thursday_calculate_and_update_coffee(thursday_trailer1)
 
         def thursday_calculate_and_update_mlksh(mlsh1):
-            mlksh = float(mlsh1 * 0.25) 
+            mlksh = float(mlsh1 * 0.1)
+            mlksh = round(mlksh)
             worksheet.update_cell(14, 5, mlksh)
             print(f'Trailer1_Milkshake_section: €', mlksh)
             return mlksh
@@ -715,7 +856,8 @@ def main():
             else:
                 random_number = random.uniform(0, 75)
 
-            mlksh2 = float(mlsh2 * 0.45) + random_number
+            mlksh2 = float(mlsh2 * 0.2) + random_number
+            mlksh2 = round(mlksh2)
             worksheet.update_cell(15, 5, mlksh2)
             print(f'Trailer2_Milkshake_section: €', mlksh2)
             return mlksh2
@@ -724,6 +866,7 @@ def main():
 
         def thursday_calculate_and_update_23percent2(mlk):
             trailer2_last_section = thursday_trailer2 - mlk
+            trailer2_last_section = round(trailer2_last_section)
             worksheet.update_cell(15, 6, trailer2_last_section)
             print(f'Trailer2_23%_section: €', trailer2_last_section)
             return trailer2_last_section
@@ -741,7 +884,8 @@ def main():
             else:
                 random_number = random.uniform(0, 75)
 
-            mlksh3 = float(mlsh3 * 0.45) + random_number
+            mlksh3 = float(mlsh3 * 0.21) + random_number
+            mlksh3 = round(mlksh3)
             worksheet.update_cell(16, 5, mlksh3)
             print(f'Trailer3_Milkshake_section: €', mlksh3)
             return mlksh3
@@ -751,6 +895,7 @@ def main():
         def thursday_calculate_and_update_23percent3(mlk):
             
             trailer3_last_section = thursday_trailer3 - mlk
+            trailer3_last_section = round(trailer3_last_section)
             worksheet.update_cell(16, 6, trailer3_last_section)
             print(f'Trailer3_23%_section: €', trailer3_last_section)
             return trailer3_last_section
@@ -768,7 +913,8 @@ def main():
             else:
                 random_number = random.uniform(0, 75)
 
-            mlksh4 = float(mlsh4 * 0.45) + random_number
+            mlksh4 = float(mlsh4 * 0.21) + random_number
+            mlksh4 = round(mlksh4)
             worksheet.update_cell(17, 5, mlksh4)
             print(f'Trailer4_Milkshake_section: €', mlksh4)
             return mlksh4
@@ -777,6 +923,7 @@ def main():
 
         def thursday_calculate_and_update_23percent4(mlk):
             trailer4_last_section = thursday_trailer4 - mlk
+            trailer4_last_section = round(trailer4_last_section)
             worksheet.update_cell(17, 6, trailer4_last_section)
             print(f'Trailer4_23%_section: €', trailer4_last_section)
             return trailer4_last_section
@@ -796,7 +943,8 @@ def main():
             else:
                 random_number = random.uniform(50, 100)
             
-            coffee = float(coffee * 0.45) + random_number
+            coffee = float(coffee * 0.49) + random_number
+            coffee = round(coffee)
             worksheet.update_cell(19, 4, coffee)
             print(f'Trailer1_Coffee_section: €', coffee)
             return coffee
@@ -804,7 +952,8 @@ def main():
         friday_coffee = friday_calculate_and_update_coffee(friday_trailer1)
 
         def friday_calculate_and_update_mlksh(mlsh1):
-            mlksh = float(mlsh1 * 0.25) 
+            mlksh = float(mlsh1 * 0.11)
+            mlksh = round(mlksh)
             worksheet.update_cell(19, 5, mlksh)
             print(f'Trailer1_Milkshake_section: €', mlksh)
             return mlksh
@@ -830,7 +979,8 @@ def main():
             else:
                 random_number = random.uniform(0, 75)
 
-            mlksh2 = float(mlsh2 * 0.45) + random_number
+            mlksh2 = float(mlsh2 * 0.21) + random_number
+            mlksh2 = round(mlksh2)
             worksheet.update_cell(20, 5, mlksh2)
             print(f'Trailer2_Milkshake_section: €', mlksh2)
             return mlksh2
@@ -839,6 +989,7 @@ def main():
 
         def friday_calculate_and_update_23percent2(mlk):
             trailer2_last_section = friday_trailer2 - mlk
+            trailer2_last_section = round(trailer2_last_section)
             worksheet.update_cell(20, 6, trailer2_last_section)
             print(f'Trailer2_23%_section: €', trailer2_last_section)
             return trailer2_last_section
@@ -856,7 +1007,8 @@ def main():
             else:
                 random_number = random.uniform(0, 75)
 
-            mlksh3 = float(mlsh3 * 0.45) + random_number
+            mlksh3 = float(mlsh3 * 0.21) + random_number
+            mlksh3 = round(mlksh3)
             worksheet.update_cell(21, 5, mlksh3)
             print(f'Trailer3_Milkshake_section: €', mlksh3)
             return mlksh3
@@ -865,6 +1017,7 @@ def main():
 
         def friday_calculate_and_update_23percent3(mlk):
             trailer3_last_section = friday_trailer3 - mlk
+            trailer3_last_section = round(trailer3_last_section)
             worksheet.update_cell(21, 6, trailer3_last_section)
             print(f'Trailer3_23%_section: €', trailer3_last_section)
             return trailer3_last_section
@@ -882,7 +1035,8 @@ def main():
             else:
                 random_number = random.uniform(0, 75)
 
-            mlksh4 = float(mlsh4 * 0.45) + random_number
+            mlksh4 = float(mlsh4 * 0.19) + random_number # .22!!!!!!!!!!!!!!!!
+            mlksh4 = round(mlksh4)
             worksheet.update_cell(22, 5, mlksh4)
             print(f'Trailer4_Milkshake_section: €', mlksh4)
             return mlksh4
@@ -891,6 +1045,7 @@ def main():
 
         def friday_calculate_and_update_23percent4(mlk):
             trailer4_last_section = friday_trailer4 - mlk
+            trailer4_last_section = round(trailer4_last_section)
             worksheet.update_cell(22, 6, trailer4_last_section)
             print(f'Trailer4_23%_section: €', trailer4_last_section)
             return trailer4_last_section
@@ -912,7 +1067,8 @@ def main():
             else:
                 random_number = random.uniform(50, 100)
             
-            coffee = float(coffee * 0.45) + random_number
+            coffee = float(coffee * 0.53) + random_number
+            coffee = round(coffee)
             worksheet.update_cell(24, 4, coffee)
             print(f'Trailer1_Coffee_section: €', coffee)
             return coffee
@@ -920,7 +1076,8 @@ def main():
         saturday_coffee = saturday_calculate_and_update_coffee(saturday_trailer1)
 
         def saturday_calculate_and_update_mlksh(mlsh1):
-            mlksh = float(mlsh1 * 0.25) 
+            mlksh = float(mlsh1 * 0.15)  # 0.11!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            mlksh = round(mlksh)
             worksheet.update_cell(24, 5, mlksh)
             print(f'Trailer1_Milkshake_section: €', mlksh)
             return mlksh
@@ -946,7 +1103,8 @@ def main():
             else:
                 random_number = random.uniform(0, 75)
 
-            mlksh2 = float(mlsh2 * 0.45) + random_number
+            mlksh2 = float(mlsh2 * 0.20) + random_number # 0.32!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            mlksh2 = round(mlksh2)
             worksheet.update_cell(25, 5, mlksh2)
             print(f'Trailer2_Milkshake_section: €', mlksh2)
             return mlksh2
@@ -955,6 +1113,7 @@ def main():
 
         def saturday_calculate_and_update_23percent2(mlk):
             trailer2_last_section = saturday_trailer2 - mlk
+            trailer2_last_section = round(trailer2_last_section)
             worksheet.update_cell(25, 6, trailer2_last_section)
             print(f'Trailer2_23%_section: €', trailer2_last_section)
             return trailer2_last_section
@@ -972,7 +1131,8 @@ def main():
             else:
                 random_number = random.uniform(0, 75)
 
-            mlksh3 = float(mlsh3 * 0.45) + random_number
+            mlksh3 = float(mlsh3 * 0.21) + random_number
+            mlksh3 = round(mlksh3)
             worksheet.update_cell(26, 5, mlksh3)
             print(f'Trailer3_Milkshake_section: €', mlksh3)
             return mlksh3
@@ -981,6 +1141,7 @@ def main():
 
         def saturday_calculate_and_update_23percent3(mlk):
             trailer3_last_section = saturday_trailer3 - mlk
+            trailer3_last_section = round(trailer3_last_section)
             worksheet.update_cell(26, 6, trailer3_last_section)
             print(f'Trailer3_23%_section: €', trailer3_last_section)
             return trailer3_last_section
@@ -998,7 +1159,8 @@ def main():
             else:
                 random_number = random.uniform(0, 75)
 
-            mlksh4 = float(mlsh4 * 0.45) + random_number
+            mlksh4 = float(mlsh4 * 0.21) + random_number
+            mlksh4 = round(mlksh4)
             worksheet.update_cell(27, 5, mlksh4)
             print(f'Trailer4_Milkshake_section: €', mlksh4)
             return mlksh4
@@ -1007,6 +1169,7 @@ def main():
 
         def saturday_calculate_and_update_23percent4(mlk):
             trailer4_last_section = saturday_trailer4 - mlk
+            trailer4_last_section = round(trailer4_last_section)
             worksheet.update_cell(27, 6, trailer4_last_section)
             print(f'Trailer4_23%_section: €', trailer4_last_section)
             return trailer4_last_section
@@ -1029,7 +1192,8 @@ def main():
             else:
                 random_number = random.uniform(50, 100)
             
-            coffee = float(coffee * 0.45) + random_number
+            coffee = float(coffee * 0.49) + random_number
+            coffee = round(coffee)
             worksheet.update_cell(29, 4, coffee)
             print(f'Trailer1_Coffee_section: €', coffee)
             return coffee
@@ -1037,7 +1201,8 @@ def main():
         sunday_coffee = sunday_calculate_and_update_coffee(sunday_trailer1)
 
         def sunday_calculate_and_update_mlksh(mlsh1):
-            mlksh = float(mlsh1 * 0.25) 
+            mlksh = float(mlsh1 * 0.11)
+            mlksh = round(mlksh)
             worksheet.update_cell(29, 5, mlksh)
             print(f'Trailer1_Milkshake_section: €', mlksh)
             return mlksh
@@ -1063,7 +1228,8 @@ def main():
             else:
                 random_number = random.uniform(0, 75)
 
-            mlksh2 = float(mlsh2 * 0.45) + random_number
+            mlksh2 = float(mlsh2 * 0.21) + random_number
+            mlksh2 = round(mlksh2)
             worksheet.update_cell(30, 5, mlksh2)
             print(f'Trailer2_Milkshake_section: €', mlksh2)
             return mlksh2
@@ -1072,6 +1238,7 @@ def main():
 
         def sunday_calculate_and_update_23percent2(mlk):
             trailer2_last_section = sunday_trailer2 - mlk
+            trailer2_last_section = round(trailer2_last_section)
             worksheet.update_cell(30, 6, trailer2_last_section)
             print(f'Trailer2_23%_section: €', trailer2_last_section)
             return trailer2_last_section
@@ -1089,7 +1256,8 @@ def main():
             else:
                 random_number = random.uniform(0, 75)
 
-            mlksh3 = float(mlsh3 * 0.45) + random_number
+            mlksh3 = float(mlsh3 * 0.21) + random_number
+            mlksh3 = round(mlksh3)
             worksheet.update_cell(31, 5, mlksh3)
             print(f'Trailer3_Milkshake_section: €', mlksh3)
             return mlksh3
@@ -1098,6 +1266,7 @@ def main():
 
         def sunday_calculate_and_update_23percent3(mlk):
             trailer3_last_section = sunday_trailer3 - mlk
+            trailer3_last_section = round(trailer3_last_section)
             worksheet.update_cell(31, 6, trailer3_last_section)
             print(f'Trailer3_23%_section: €', trailer3_last_section)
             return trailer3_last_section
@@ -1115,7 +1284,8 @@ def main():
             else:
                 random_number = random.uniform(0, 75)
 
-            mlksh4 = float(mlsh4 * 0.45) + random_number
+            mlksh4 = float(mlsh4 * 0.22) + random_number
+            mlksh4 = round(mlksh4)
             worksheet.update_cell(32, 5, mlksh4)
             print(f'Trailer4_Milkshake_section: €', mlksh4)
             return mlksh4
@@ -1124,13 +1294,53 @@ def main():
 
         def sunday_calculate_and_update_23percent4(mlk):
             trailer4_last_section = sunday_trailer4 - mlk
+            trailer4_last_section = round(trailer4_last_section)
             worksheet.update_cell(32, 6, trailer4_last_section)
             print(f'Trailer4_23%_section: €', trailer4_last_section)
             return trailer4_last_section
 
         sunday_calculate_and_update_23percent4(sunday_mlksh4)
         print('_____________________________')
+# #################################################################################### all mlsh, all coffee, all 23%:
 
+        def all_coffee():
+            row_numbers = [2, 6, 10, 14, 19, 24, 29]
+            coffee_all = []
+            for row_number in row_numbers:
+                coffee = worksheet.cell(row_number, 4).value.replace('€', '').replace(',', '')
+                coffee = float(coffee)
+                coffee_all.append(coffee)
+            coffee_total = sum(coffee_all)
+            worksheet.update_cell(34, 4, coffee_total)
+            print('Coffee_total:', coffee_total)
+            return coffee_total
+        time.sleep(60)
+        def all_mlsh():
+            row_numbers = [2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15, 16, 17, 19, 20, 21, 22, 24, 25, 26, 27, 29, 30, 31, 32]
+            mlsh_all = []
+            for row_number in row_numbers:
+                mlshs = worksheet.cell(row_number, 5).value.replace('€', '').replace(',', '')
+                mlshs = float(mlshs)
+                mlsh_all.append(mlshs)
+            mlsh_total = sum(mlsh_all)
+            worksheet.update_cell(34, 5, mlsh_total)
+            print('Mlsh_total:', mlsh_total)
+            return mlsh_total
+        
+        def all_23():
+            row_numbers = [2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15, 16, 17, 19, 20, 21, 22, 24, 25, 26, 27, 29, 30, 31, 32]
+            all_23s = []
+            for row_number in row_numbers:
+                only_23s = worksheet.cell(row_number, 6).value.replace('€', '').replace(',', '')
+                only_23s = float(only_23s)
+                all_23s.append(only_23s)
+            only_23s_total = sum(all_23s)
+            worksheet.update_cell(34, 6, only_23s_total)
+            print('Only_23s_total:', only_23s_total)
+            return only_23s_total
+        all_coffee()
+        all_mlsh()
+        all_23()
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         print('Sheet is ready! All successful!!!')
         print('_____________________________')
